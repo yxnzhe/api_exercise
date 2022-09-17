@@ -1,3 +1,4 @@
+from ctypes.wintypes import HACCEL
 from django.http import Http404
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.hashers import make_password, check_password
@@ -81,6 +82,34 @@ class editProfileViewSet(UpdateAPIView):
             serializer = UserSerializers(user, many=False)
             response = {
                 'message': 'User profile updated successfully',
+                'status': 200,
+                'updated_data': serializer.data
+            }
+        else:
+            response = {
+                'message': 'User account is not valid',
+                'status': 401
+            }
+        return Response(response)
+
+class deactivateProfileViewSet(UpdateAPIView):
+    def get_user(self, username):
+        try:
+            user = User.objects.get(username=username)
+            return user
+        except User.DoesNotExist:
+            raise Http404
+
+    def put(self, request):
+        username = request.data['username']
+        user = self.get_user(username)
+
+        if(user.is_deleted == False):
+            user.is_deleted = True
+            user.save()
+            serializer = UserSerializers(user, many=False)
+            response = {
+                'message': 'User profile deactivated successfully',
                 'status': 200,
                 'updated_data': serializer.data
             }
