@@ -2,6 +2,7 @@ from django.http import Http404
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.hashers import make_password, check_password
 
+from rest_framework.generics import UpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
@@ -60,6 +61,35 @@ class loginUserViewSet(ViewSet):
         else:
             raise Http404
 
+class editProfileViewSet(UpdateAPIView):
+    def get_user(self, username):
+        try:
+            user = User.objects.get(username=username)
+            return user
+        except User.DoesNotExist:
+            raise Http404
+    
+    def put(self, request):
+        username = request.data['username']
+        user = self.get_user(username)
+
+        if(user.is_deleted == False):
+            user.name = request.data['name']
+            user.email = request.data['email']
+            user.password = make_password(request.data['password'], None, 'pbkdf2_sha256')
+            user.save()
+            serializer = UserSerializers(user, many=False)
+            response = {
+                'message': 'User profile updated successfully',
+                'status': 200,
+                'updated_data': serializer.data
+            }
+        else:
+            response = {
+                'message': 'User account is not valid',
+                'status': 401
+            }
+        return Response(response)
 class getAllUsers(APIView):
     def get(self, request):
         users = User.objects.all()
