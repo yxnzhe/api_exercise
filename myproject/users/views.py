@@ -119,6 +119,34 @@ class deactivateProfileViewSet(UpdateAPIView):
                 'status': 401
             }
         return Response(response)
+
+class activateProfileViewSet(UpdateAPIView):
+    def get_user(self, username):
+        try:
+            user = User.objects.get(username=username)
+            return user
+        except User.DoesNotExist:
+            raise Http404
+    
+    def put(self, request):
+        username = request.data['username']
+        user = self.get_user(username)
+
+        if(user.is_deleted == True):
+            user.is_deleted = False
+            user.save()
+            serializer = UserSerializers(user, many=False)
+            response = {
+                'message': 'User profile activated successfully',
+                'status': 200,
+                'updated_data': serializer.data
+            }
+        else:
+            response = {
+                'message': 'User account is not valid',
+                'status': 401
+            }
+        return Response(response)
 class getAllUsers(APIView):
     def get(self, request):
         users = User.objects.all()
