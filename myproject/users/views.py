@@ -20,9 +20,12 @@ class registerUserViewSet(ViewSet):
         serializer = UserSerializers(data=inputData)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
-        return Response(serializer.data)
-
+        response = {
+            'message': 'User created successfully',
+            'status': 201,
+            'infomation': serializer.data
+        }
+        return Response(response)
 class loginUserViewSet(ViewSet):
     def get_credential(self, email):
         try:
