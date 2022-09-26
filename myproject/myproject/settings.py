@@ -1,5 +1,6 @@
 from pathlib import Path
 import environ
+import os
 
 # Hide secret key
 env = environ.Env()
@@ -32,6 +33,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'anymail',
 
     'users',
 ]
@@ -51,7 +53,7 @@ ROOT_URLCONF = 'myproject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -77,6 +79,17 @@ DATABASES = {
     }
 }
 
+# Email
+ANYMAIL = {
+    "SENDINBLUE_API_KEY": env('SENDINBLUE_API_KEY'),
+}
+
+EMAIL_BACKEND = "anymail.backends.sendinblue.EmailBackend"
+# EMAIL_HOST = 'smtp-relay.sendinblue.com'
+# EMAIL_PORT = 587
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = '2MXSNrz4I7BFpjvU'
+# EMAIL_USE_TLS = True
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -112,7 +125,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

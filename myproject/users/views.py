@@ -1,15 +1,21 @@
+from cgitb import html
 from ctypes.wintypes import HACCEL
+from secrets import token_urlsafe
+
 from django.http import Http404
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.hashers import make_password, check_password
+from django.core.mail import send_mail, BadHeaderError
+from django.conf import settings
+from django.template.loader import render_to_string
 
 from rest_framework.generics import UpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 
-from .models import User
-from .serializers import UserSerializers
+from .models import User, ForgotPassword
+from .serializers import ForgotPasswordSerializers, UserSerializers
 
 class registerUserViewSet(ViewSet):
     def create(self, request):
@@ -147,6 +153,51 @@ class activateProfileViewSet(UpdateAPIView):
                 'status': 401
             }
         return Response(response)
+
+class forgotPasswordViewSet(ViewSet):
+    def get_user(self, email):
+        try:
+            user = User.objects.get(email=email)
+            return user
+        except User.DoesNotExist:
+            raise Http404
+    
+    def send_email(self, email, user, token):
+        try:
+            email_template = render_to_string('reset-password.html', {'name': user, 'action_url': '192.168.0.143:8080/#/reset-password/' + token})
+            send_mail(subject='Password Reset', message='', html_message=email_template, from_email=settings.EMAIL_HOST_USER, recipient_list=[email])
+        except BadHeaderError:
+            raise Http404
+
+    def create(self, request):
+        email = request.data['email']
+        user = self.get_user(email)
+
+        if(user.is_deleted == False):
+            data ={
+                'user': user.id,
+                'token': token_urlsafe(32)
+            }
+            serializer = ForgotPasswordSerializers(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            self.send_email(email, serializer.data['user'], token=serializer.data['token'])
+            response = {
+                'message': 'Password reset link sent to your email',
+                'status': 200
+            }
+        else:
+            response = {
+                'message': 'User account is not valid',
+                'status': 401
+            }
+        return Response(response)
+
+class getAllForgotPassword(APIView):
+    def get(self, request):
+        forgotPassword = ForgotPassword.objects.all()
+        serializer = ForgotPasswordSerializers(forgotPassword, many=True)
+        return Response(serializer.data)
 class getAllUsers(APIView):
     def get(self, request):
         users = User.objects.all()
