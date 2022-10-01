@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from users.views import loginUserViewSet, registerUserViewSet, getAllForgotPassword, editProfileViewSet, deactivateProfileViewSet, activateProfileViewSet, forgotPasswordViewSet, getAllUsers
+from users.views import loginUserViewSet, resetPasswordViewSet, registerUserViewSet, getAllForgotPassword, editProfileViewSet, deactivateProfileViewSet, activateProfileViewSet, forgotPasswordViewSet, getAllUsers
 
 router = DefaultRouter()
 router.register(r'login', loginUserViewSet, basename='login')
@@ -14,4 +14,5 @@ urlpatterns = [
     path('users/edit/', editProfileViewSet.as_view(), name='editProfile'),
     path('users/deactivate/', deactivateProfileViewSet.as_view(), name='deactivateProfile'),
     path('users/activate/', activateProfileViewSet.as_view(), name='activateProfile'),
+    path('users/reset-password/<str:token>/', resetPasswordViewSet.as_view(), name='resetPassword'),
 ]

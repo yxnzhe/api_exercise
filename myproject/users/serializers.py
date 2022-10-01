@@ -22,5 +22,6 @@ class ForgotPasswordSerializers(serializers.ModelSerializer):
             'id',
             'user',
             'token',
-            'expire_at'
+            'expire_at',
+            'is_redeemed'
         )

@@ -2,6 +2,7 @@ from cgitb import html
 from ctypes.wintypes import HACCEL
 from secrets import token_urlsafe
 
+from django.utils import timezone
 from django.http import Http404
 from django.contrib.auth.models import update_last_login
 from django.contrib.auth.hashers import make_password, check_password
@@ -193,6 +194,49 @@ class forgotPasswordViewSet(ViewSet):
             }
         return Response(response)
 
+class resetPasswordViewSet(UpdateAPIView):
+    def get_user(self, email):
+        try:
+            user = User.objects.get(email=email)
+            return user
+        except User.DoesNotExist:
+            raise Http404
+
+    def get_token(self, token):
+        try:
+            reset_token = ForgotPassword.objects.get(token=token)
+            return reset_token
+        except ForgotPassword.DoesNotExist:
+            raise Http404
+
+    def put(self, request, token):
+        email = request.data['email']
+        user = self.get_user(email)
+        reset_token = self.get_token(token)
+
+        if(user.is_deleted == False):
+            if(reset_token.user.id == user.id and reset_token.expire_at > timezone.now() and reset_token.is_redeemed == False):
+                user.password = make_password(request.data['password'], None, 'pbkdf2_sha256')
+                reset_token.is_redeemed = True
+                user.save()
+                reset_token.save()
+                serializer = UserSerializers(user, many=False)
+                response = {
+                    'message': 'Password reset successfully',
+                    'status': 200,
+                    'updated_data': serializer.data
+                }
+            else:
+                response = {
+                    'message': 'Invalid token',
+                    'status': 401,
+                }
+        else:
+            response = {
+                'message': 'User account is not valid',
+                'status': 401
+            }
+        return Response(response)
 class getAllForgotPassword(APIView):
     def get(self, request):
         forgotPassword = ForgotPassword.objects.all()
